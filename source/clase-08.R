@@ -14,6 +14,9 @@ ocu <- import("input/Enero - Cabecera - Ocupados.csv") %>% clean_names()
 geih <- left_join(x = cg, y = ocu, by = c("directorio","secuencia_p","orden"))
 
 ## **[1.] Descriptivas**
+skim(geih)
+geih %>% select(inglabo,p6020) %>% skim()
+geih %>% select(inglabo,p6020) %>% summary()
 
 ### **1.1 Generales**
 
@@ -29,12 +32,26 @@ summarize_all(list(min, max, median, mean), na.rm = T)
 ## **group_by()** toma un tibble/data.frame y lo convierte en un tibble agrupado, donde las operaciones son realizadas por grupo. 
 
 geih %>% 
-select(inglabo,p6020,p6960) %>% 
+group_by(p6020) %>%    
+summarise(promedio_inglabo = mean(inglabo, na.rm = T))
+
+##corregir sección del código
+geih %>% mutate(rangos = case_when(p6040<18 ~"Menor edad",
+                                   p6040>=18 & p6040<28 ~"Joven adulto",
+                                   p6040>=~"Adulto")) %>%
+geih %>% 
+#select(inglabo,p6020,p6960) %>% 
 group_by(p6020) %>%  
 summarise(promedio_inglabo = mean(inglabo, na.rm = T),
           media_inglabo = median(inglabo, na.rm = T),
           promedio_p6960 = mean(p6960, na.rm = T),
           media_p6960 = median(p6960, na.rm = T))
+
+#Ingreso laboral promedio por sexo y tipo de contrato
+
+geih %>%
+group_by(p6020,p6450) %>%
+summarise(mean_Ing=mean(inglabo, na.rm =T))
 
 ## **[2.] Visualizaciones**
 
@@ -58,7 +75,7 @@ graph_1 + scale_color_manual(values = c("2"="red" , "1"="blue") , label = c("1"=
 
 
 ## **density chart:**
-density <- filter(geih, !is.na(p6450) & inglabo < 1e+07 ) %>% 
+density <- geih %>% subset(!is.na(p6450) & inglabo < 1e+07 ) %>% 
            ggplot(data=. , mapping = aes(x = inglabo, group = as.factor(p6450), fill = as.factor(p6450))) + 
            geom_density() 
 density
@@ -92,6 +109,7 @@ ingresos +
 scale_fill_manual(values = c("2"="red" , "1"="blue") , label = c("1"="Hombre" , "2"="Mujer") , name = "Sexo") +
 labs(x = "sexo") + 
 theme_classic()
+
 
 
 
